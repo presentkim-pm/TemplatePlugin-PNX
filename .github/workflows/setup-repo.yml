@@ -1,0 +1,149 @@
+name: Setup PNX Plugin Template
+on:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  initialize:
+    runs-on: ubuntu-latest
+    # Prevent execution on the template repository itself
+    if: github.repository != 'presentkim-pm/TemplatePlugin-PNX'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize Project
+        # Load the repository description into an environment variable
+        env:
+          REPO_DESC: ${{ github.event.repository.description }}
+        run: |
+          # ========================================================
+          # [Configuration Area]
+          # Adjust these variables to match your template's structure
+          # ========================================================
+          OLD_GROUP_BASE="kim/present/pnx"       # The unchanging part of the package path
+          OLD_PKG_SUFFIX="template"              # The part of the package to rename (folder name)
+          OLD_CLASS_NAME="TemplatePlugin"        # The main class name to rename
+          
+          # Full package string (e.g., kim.present.pnx.template)
+          OLD_FULL_PACKAGE="kim.present.pnx.$OLD_PKG_SUFFIX"
+          
+          # Source directory path (Kotlin)
+          SRC_PATH="src/main/kotlin/$OLD_GROUP_BASE"
+          # ========================================================
+
+          echo "🚀 Starting Project Initialization..."
+
+          # ---------------------------------------------------------
+          # 1. Prepare Variables (Based on Repository Name)
+          # ---------------------------------------------------------
+          REPO_NAME="${{ github.event.repository.name }}"
+
+          # 1-1. Generate new package suffix
+          # Remove special chars, convert to lowercase (e.g., "My-Plugin" -> "myplugin")
+          NEW_PKG_SUFFIX=$(echo "$REPO_NAME" | sed 's/[^a-zA-Z0-9]//g' | tr '[:upper:]' '[:lower:]')
+
+          # 1-2. Generate new class name (PascalCase)
+          # Split by hyphen, capitalize first letter of each word (e.g., "my-plugin" -> "MyPlugin")
+          NEW_CLASS_NAME=$(echo "$REPO_NAME" | awk -F- '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)} 1' OFS='')
+
+          # 1-3. Process Repository Description
+          # If description is empty, use a default string
+          if [ -z "$REPO_DESC" ]; then
+            REPO_DESC="Plugin generated from template"
+          fi
+          
+          # Sanitize description for 'sed' usage
+          # Remove newlines and escape special characters like '&', '/', and '\'
+          CLEAN_DESC=$(echo "$REPO_DESC" | tr -d '\n' | sed 's/[&/\]/\\&/g')
+
+          echo "------------------------------------------------"
+          echo " Target Info:"
+          echo " - Repo Name:    $REPO_NAME"
+          echo " - Package:      $NEW_PKG_SUFFIX"
+          echo " - Main Class:   $NEW_CLASS_NAME"
+          echo " - Description:  $CLEAN_DESC"
+          echo "------------------------------------------------"
+
+          # ---------------------------------------------------------
+          # 2. Refactor Directory Structure & Files
+          # ---------------------------------------------------------
+          OLD_DIR="$SRC_PATH/$OLD_PKG_SUFFIX"
+          NEW_DIR="$SRC_PATH/$NEW_PKG_SUFFIX"
+
+          if [ -d "$OLD_DIR" ]; then
+            echo "-> Moving source directory..."
+            mkdir -p "$NEW_DIR"
+          
+            # Move and rename the main class file
+            mv "$OLD_DIR/$OLD_CLASS_NAME.kt" "$NEW_DIR/$NEW_CLASS_NAME.kt"
+          
+            # Move remaining files (if any)
+            if [ "$(ls -A $OLD_DIR)" ]; then
+              mv "$OLD_DIR"/* "$NEW_DIR"/ 2>/dev/null || true
+            fi
+          
+            # Remove the empty old directory
+            rmdir "$OLD_DIR"
+          else
+            echo "❌ Error: Source directory not found at $OLD_DIR"
+            exit 1
+          fi
+
+          # ---------------------------------------------------------
+          # 3. Replace Content in Files
+          # ---------------------------------------------------------
+          
+          # 3-1. Kotlin Source Files
+          echo "-> Updating Kotlin source files..."
+          # Update 'package' declaration in all .kt files
+          find src/main/kotlin -type f -name "*.kt" -exec sed -i "s/package $OLD_FULL_PACKAGE/package kim.present.pnx.$NEW_PKG_SUFFIX/g" {} +
+          
+          # Update class name in the main file
+          sed -i "s/class $OLD_CLASS_NAME/class $NEW_CLASS_NAME/g" "$NEW_DIR/$NEW_CLASS_NAME.kt"
+
+          # 3-2. plugin.yml
+          echo "-> Updating plugin.yml..."
+          YML_FILE="src/main/resources/plugin.yml"
+          
+          # Update 'name'
+          sed -i "s/^name: .*/name: $NEW_CLASS_NAME/" "$YML_FILE"
+          
+          # Update 'main' path
+          sed -i "s|main: $OLD_FULL_PACKAGE.$OLD_CLASS_NAME|main: kim.present.pnx.$NEW_PKG_SUFFIX.$NEW_CLASS_NAME|" "$YML_FILE"
+          
+          # Update description (using | as delimiter to avoid conflict with / in text)
+          sed -i "s|{{DESCRIPTION}}|$CLEAN_DESC|" "$YML_FILE"
+
+          # 3-3. build.gradle.kts
+          echo "-> Updating build.gradle.kts..."
+          GRADLE_FILE="build.gradle.kts"
+          
+          # Update variable 'val pluginName'
+          sed -i "s/val pluginName = \"$OLD_CLASS_NAME\"/val pluginName = \"$NEW_CLASS_NAME\"/" "$GRADLE_FILE"
+          
+          # Update 'group'
+          sed -i "s/group = \"$OLD_FULL_PACKAGE\"/group = \"kim.present.pnx.$NEW_PKG_SUFFIX\"/" "$GRADLE_FILE"
+
+          # 3-4. settings.gradle.kts (Optional)
+          if [ -f "settings.gradle.kts" ]; then
+             echo "-> Updating settings.gradle.kts..."
+             sed -i "s/rootProject.name = .*/rootProject.name = \"$REPO_NAME\"/" settings.gradle.kts
+          fi
+
+      - name: Cleanup Workflow
+        run: rm .github/workflows/setup-repo.yml
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "Template Bot"
+          git config --global user.email "action@github.com"
+          git add .
+          git commit -m "refactor(template): Setup PNX Plugin to $REPO_NAME"
+          git push
