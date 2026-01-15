@@ -1,0 +1,7 @@
+name: TemplatePlugin
+main: kim.present.pnx.template.TemplatePlugin
+version: "1.0.0"
+api: [ "2.0.0" ]
+load: POSTWORLD
+author: PresentKim
+description: Template plugin for PresentKim
