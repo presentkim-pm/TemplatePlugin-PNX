@@ -146,6 +146,11 @@ jobs:
         run: |
           git config --global user.name "Template Bot"
           git config --global user.email "action@github.com"
-          git add .
-          git commit -m "refactor(template): Setup PNX Plugin to $REPO_NAME"
-          git push
+          # Add all changes
+          git add . 
+          # Amend the initial commit with the setup changes.
+          # This commit message indicates the plugin base source was generated
+          # from the template repository.
+          git commit --amend --no-edit -m "feat(init): Generate plugin base source
+          Generated from https://github.com/presentkim-pm/TemplatePlugin-PNX"
+          git push --force
