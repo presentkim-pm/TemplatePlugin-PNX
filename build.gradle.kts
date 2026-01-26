@@ -13,16 +13,18 @@ version = "1.0.0-SNAPSHOT"
 
 repositories {
     mavenLocal()
-    maven("https://repo.maven.apache.org/maven2/")
-    maven("https://jitpack.io")
+    mavenCentral()
     maven("https://repo.opencollab.dev/maven-releases/")
     maven("https://repo.opencollab.dev/maven-snapshots/")
     maven("https://repo.powernukkitx.org/releases")
+    maven("https://jitpack.io")
 }
 
 dependencies {
     compileOnly("org.powernukkitx:server:2.0.0-SNAPSHOT")
+
     implementation(kotlin("stdlib"))
+    implementation("com.github.presentkim-pm:CommonLib-PNX:1.0.0")
 }
 
 kotlin {
@@ -31,15 +33,17 @@ kotlin {
     }
 }
 
+tasks.jar {
+    enabled = true
+    archiveClassifier.set("dev")
+}
+
 tasks.withType<ShadowJar> {
     archiveClassifier.set("")
     minimize()
-
-    relocate("kotlin", "$group.libs.kotlin")
-    relocate("org.jetbrains", "$group.libs.jetbrains")
 }
 
-val DEFAULT_SERVER_PATH = "../../";
+val DEFAULT_SERVER_PATH = "../../"
 
 tasks.register<Copy>("deploy") {
     dependsOn(tasks.shadowJar)
