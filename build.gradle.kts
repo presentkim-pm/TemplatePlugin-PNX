@@ -23,8 +23,7 @@ repositories {
 dependencies {
     compileOnly("org.powernukkitx:server:2.0.0-SNAPSHOT")
 
-    implementation(kotlin("stdlib"))
-    implementation("com.github.presentkim-pm:CommonLib-PNX:1.0.0")
+    compileOnly(kotlin("stdlib"))
 }
 
 kotlin {

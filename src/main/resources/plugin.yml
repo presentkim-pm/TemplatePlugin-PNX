@@ -5,3 +5,4 @@ api: [ "2.0.0" ]
 load: POSTWORLD
 author: PresentKim
 description: "{{DESCRIPTION}}"
+depend: [ libKotlin ]
