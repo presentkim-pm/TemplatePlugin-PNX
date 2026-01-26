@@ -12,7 +12,7 @@ jobs:
   initialize:
     runs-on: ubuntu-latest
     # Prevent execution on the template repository itself
-    if: github.repository != 'presentkim-pm/TemplatePlugin-PNX'
+    if: github.repository != 'presentkim-pnx/TemplatePlugin'
 
     steps:
       - name: Checkout code
