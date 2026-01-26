@@ -15,7 +15,7 @@ class TemplatePlugin : PluginBase() {
     }
 
     override fun onLoad() {
-        I18N = PluginI18nManager.register(this);
+        I18N = PluginI18nManager.register(this)
     }
 
     override fun onEnable() {
