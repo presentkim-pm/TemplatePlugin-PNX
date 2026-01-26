@@ -3,7 +3,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.*
 
 plugins {
-    kotlin("jvm") version "2.0.0"
+    kotlin("jvm") version "2.3.0"
+    kotlin("plugin.serialization") version "2.3.0"
     id("com.gradleup.shadow") version "8.3.0"
 }
 
@@ -22,8 +23,9 @@ repositories {
 
 dependencies {
     compileOnly("org.powernukkitx:server:2.0.0-SNAPSHOT")
-
     compileOnly(kotlin("stdlib"))
+    compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
 }
 
 kotlin {
